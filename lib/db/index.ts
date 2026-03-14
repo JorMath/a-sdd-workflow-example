@@ -1,6 +1,6 @@
-// Production database (PostgreSQL) - safe for Edge Runtime
+// Production database (SQLite via better-sqlite3) 
 export { getDb, type Database } from './client';
-export { users, userRoleEnum, type User, type NewUser } from './schema';
+export { users, userRoleValues, type User, type NewUser } from './schema';
 
-// Test database (pglite) - ONLY for tests, never imported in app code
+// Test database (better-sqlite3 :memory:) - ONLY for tests, never imported in app code
 export { getTestDb, type TestDatabase } from './test-client';

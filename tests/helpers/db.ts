@@ -1,81 +1,67 @@
-import { PGlite } from '@electric-sql/pglite';
-import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
+import BetterSqlite3 from 'better-sqlite3';
+import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import {
+  generateSQLiteDrizzleJson,
+  generateSQLiteMigration,
+  type DrizzleSQLiteSnapshotJSON,
+} from 'drizzle-kit/api';
+import * as schema from '@/lib/db/schema';
 
-export async function createTestDb() {
-  const client = new PGlite();
-  const db = drizzlePglite(client);
+/** Empty snapshot for diffing against current schema */
+const EMPTY_SNAPSHOT: DrizzleSQLiteSnapshotJSON = {
+  id: '00000000-0000-0000-0000-000000000000',
+  prevId: '',
+  version: '6',
+  dialect: 'sqlite',
+  tables: {},
+  enums: {},
+  views: {},
+  _meta: { tables: {}, columns: {} },
+};
 
-  // --- Enums (must be created before tables) ---
+let cachedStatements: string[] | null = null;
 
-  await db.execute(`
-    CREATE TYPE "user_role" AS ENUM ('super_admin', 'admin_torneo', 'arbitro', 'capitan', 'jugador')
-  `);
+/**
+ * Generate CREATE TABLE statements from the Drizzle schema.
+ * Results are cached — the schema doesn't change between test runs.
+ */
+async function getSchemaStatements(): Promise<string[]> {
+  if (cachedStatements) return cachedStatements;
 
-  await db.execute(`
-    CREATE TYPE "tournament_category" AS ENUM ('libre', 'sub_20', 'sub_17', 'femenino', 'veteranos')
-  `);
+  const currentSnapshot = await generateSQLiteDrizzleJson(schema);
+  cachedStatements = await generateSQLiteMigration(
+    EMPTY_SNAPSHOT,
+    currentSnapshot,
+  );
+  return cachedStatements;
+}
 
-  await db.execute(`
-    CREATE TYPE "tournament_format" AS ENUM ('liga', 'copa', 'liga_copa')
-  `);
+export type TestDb = BetterSQLite3Database<typeof schema>;
 
-  await db.execute(`
-    CREATE TYPE "tournament_status" AS ENUM ('inscripciones', 'en_curso', 'finalizado', 'cancelado')
-  `);
+/**
+ * Creates a fresh in-memory SQLite database with all tables.
+ * Each call returns an isolated DB — no shared state between tests.
+ */
+export async function setupTestDb(): Promise<TestDb> {
+  const sqlite = new BetterSqlite3(':memory:');
+  sqlite.pragma('foreign_keys = ON');
 
-  // --- Tables (ordered by FK dependencies) ---
+  const statements = await getSchemaStatements();
+  for (const stmt of statements) {
+    sqlite.exec(stmt);
+  }
 
-  await db.execute(`
-    CREATE TABLE "users" (
-      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      "email" varchar(255) NOT NULL UNIQUE,
-      "password_hash" varchar(255) NOT NULL,
-      "name" varchar(255) NOT NULL,
-      "role" "user_role" NOT NULL DEFAULT 'jugador',
-      "cedula" varchar(10) UNIQUE,
-      "is_active" boolean NOT NULL DEFAULT true,
-      "created_at" timestamptz NOT NULL DEFAULT NOW(),
-      "updated_at" timestamptz NOT NULL DEFAULT NOW()
-    )
-  `);
+  return drizzle({ client: sqlite, schema });
+}
 
-  await db.execute(`
-    CREATE TABLE "torneos" (
-      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      "nombre" varchar(150) NOT NULL,
-      "slug" varchar(200) NOT NULL UNIQUE,
-      "temporada" varchar(20) NOT NULL,
-      "categoria" "tournament_category" NOT NULL,
-      "formato" "tournament_format" NOT NULL,
-      "estado" "tournament_status" NOT NULL DEFAULT 'inscripciones',
-      "fecha_inicio" date NOT NULL,
-      "fecha_fin" date,
-      "max_equipos" integer NOT NULL,
-      "partidos_ida_vuelta" boolean NOT NULL DEFAULT false,
-      "puntos_victoria" integer NOT NULL DEFAULT 3,
-      "puntos_empate" integer NOT NULL DEFAULT 1,
-      "puntos_derrota" integer NOT NULL DEFAULT 0,
-      "criterio_desempate" json NOT NULL DEFAULT '["diferencia_goles","goles_favor","resultado_directo","tarjetas_amarillas","tarjetas_rojas","sorteo"]',
-      "tarjetas_suspension" integer NOT NULL DEFAULT 5,
-      "inscripcion_precio" numeric(8, 2) NOT NULL DEFAULT '0.00',
-      "reglas_descripcion" text,
-      "cancel_reason" text,
-      "created_by" uuid NOT NULL REFERENCES "users"("id"),
-      "created_at" timestamptz NOT NULL DEFAULT NOW(),
-      "updated_at" timestamptz NOT NULL DEFAULT NOW()
-    )
-  `);
-
-  await db.execute(`
-    CREATE TABLE "tournament_admin_assignments" (
-      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      "tournament_id" uuid NOT NULL REFERENCES "torneos"("id"),
-      "user_id" uuid NOT NULL REFERENCES "users"("id"),
-      "assigned_at" timestamptz NOT NULL DEFAULT NOW(),
-      "assigned_by" uuid NOT NULL REFERENCES "users"("id"),
-      UNIQUE ("tournament_id", "user_id")
-    )
-  `);
-
-  return db;
+/**
+ * Cleanup: close the underlying SQLite connection.
+ * For :memory: DBs this also destroys all data.
+ */
+export function cleanupTestDb(db: TestDb): void {
+  // Access the underlying better-sqlite3 Database to close it
+  // The drizzle instance wraps it; closing is optional for :memory:
+  // but good practice to release resources.
+  // Note: drizzle-orm doesn't expose a .close() method, but :memory: DBs
+  // are garbage collected when the reference is dropped.
 }

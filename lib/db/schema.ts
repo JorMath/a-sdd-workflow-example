@@ -1,65 +1,55 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  boolean,
-  timestamp,
-  pgEnum,
-  integer,
-  text,
-  date,
-  numeric,
-  json,
-  unique,
-} from 'drizzle-orm/pg-core';
+import crypto from 'node:crypto';
+import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core';
 
-export const userRoleEnum = pgEnum('user_role', [
+// --- Enum value arrays (app-level validation via Zod, compile-time TS checks via text({ enum })) ---
+
+export const userRoleValues = [
   'super_admin',
   'admin_torneo',
   'arbitro',
   'capitan',
   'jugador',
-]);
+] as const;
 
-// --- Tournament enums ---
-
-export const tournamentCategoryEnum = pgEnum('tournament_category', [
+export const tournamentCategoryValues = [
   'libre',
   'sub_20',
   'sub_17',
   'femenino',
   'veteranos',
-]);
+] as const;
 
-export const tournamentFormatEnum = pgEnum('tournament_format', [
+export const tournamentFormatValues = [
   'liga',
   'copa',
   'liga_copa',
-]);
+] as const;
 
-export const tournamentStatusEnum = pgEnum('tournament_status', [
+export const tournamentStatusValues = [
   'inscripciones',
   'en_curso',
   'finalizado',
   'cancelado',
-]);
+] as const;
 
 // --- Tables ---
 
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
-  name: varchar('name', { length: 255 }).notNull(),
-  role: userRoleEnum('role').notNull().default('jugador'),
-  cedula: varchar('cedula', { length: 10 }).unique(),
-  isActive: boolean('is_active').notNull().default(true),
-  createdAt: timestamp('created_at', { withTimezone: true })
+export const users = sqliteTable('users', {
+  id: text('id')
+    .$defaultFn(() => crypto.randomUUID())
+    .primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  name: text('name').notNull(),
+  role: text('role', { enum: userRoleValues }).notNull().default('jugador'),
+  cedula: text('cedula').unique(),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
     .notNull()
-    .defaultNow(),
+    .$defaultFn(() => new Date()),
 });
 
 export type User = typeof users.$inferSelect;
@@ -67,22 +57,28 @@ export type NewUser = typeof users.$inferInsert;
 
 // --- Tournament tables ---
 
-export const torneos = pgTable('torneos', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  nombre: varchar('nombre', { length: 150 }).notNull(),
-  slug: varchar('slug', { length: 200 }).notNull().unique(),
-  temporada: varchar('temporada', { length: 20 }).notNull(),
-  categoria: tournamentCategoryEnum('categoria').notNull(),
-  formato: tournamentFormatEnum('formato').notNull(),
-  estado: tournamentStatusEnum('estado').notNull().default('inscripciones'),
-  fechaInicio: date('fecha_inicio', { mode: 'string' }).notNull(),
-  fechaFin: date('fecha_fin', { mode: 'string' }),
+export const torneos = sqliteTable('torneos', {
+  id: text('id')
+    .$defaultFn(() => crypto.randomUUID())
+    .primaryKey(),
+  nombre: text('nombre').notNull(),
+  slug: text('slug').notNull().unique(),
+  temporada: text('temporada').notNull(),
+  categoria: text('categoria', { enum: tournamentCategoryValues }).notNull(),
+  formato: text('formato', { enum: tournamentFormatValues }).notNull(),
+  estado: text('estado', { enum: tournamentStatusValues })
+    .notNull()
+    .default('inscripciones'),
+  fechaInicio: text('fecha_inicio').notNull(),
+  fechaFin: text('fecha_fin'),
   maxEquipos: integer('max_equipos').notNull(),
-  partidosIdaVuelta: boolean('partidos_ida_vuelta').notNull().default(false),
+  partidosIdaVuelta: integer('partidos_ida_vuelta', { mode: 'boolean' })
+    .notNull()
+    .default(false),
   puntosVictoria: integer('puntos_victoria').notNull().default(3),
   puntosEmpate: integer('puntos_empate').notNull().default(1),
   puntosDerrota: integer('puntos_derrota').notNull().default(0),
-  criterioDesempate: json('criterio_desempate')
+  criterioDesempate: text('criterio_desempate', { mode: 'json' })
     .notNull()
     .$type<string[]>()
     .default([
@@ -94,40 +90,37 @@ export const torneos = pgTable('torneos', {
       'sorteo',
     ]),
   tarjetasSuspension: integer('tarjetas_suspension').notNull().default(5),
-  inscripcionPrecio: numeric('inscripcion_precio', {
-    precision: 8,
-    scale: 2,
-  })
-    .notNull()
-    .default('0.00'),
+  inscripcionPrecio: text('inscripcion_precio').notNull().default('0.00'),
   reglasDescripcion: text('reglas_descripcion'),
   cancelReason: text('cancel_reason'),
-  createdBy: uuid('created_by')
+  createdBy: text('created_by')
     .notNull()
     .references(() => users.id),
-  createdAt: timestamp('created_at', { withTimezone: true })
+  createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
     .notNull()
-    .defaultNow()
+    .$defaultFn(() => new Date())
     .$onUpdate(() => new Date()),
 });
 
-export const tournamentAdminAssignments = pgTable(
+export const tournamentAdminAssignments = sqliteTable(
   'tournament_admin_assignments',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    tournamentId: uuid('tournament_id')
+    id: text('id')
+      .$defaultFn(() => crypto.randomUUID())
+      .primaryKey(),
+    tournamentId: text('tournament_id')
       .notNull()
       .references(() => torneos.id),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .notNull()
       .references(() => users.id),
-    assignedAt: timestamp('assigned_at', { withTimezone: true })
+    assignedAt: integer('assigned_at', { mode: 'timestamp' })
       .notNull()
-      .defaultNow(),
-    assignedBy: uuid('assigned_by')
+      .$defaultFn(() => new Date()),
+    assignedBy: text('assigned_by')
       .notNull()
       .references(() => users.id),
   },

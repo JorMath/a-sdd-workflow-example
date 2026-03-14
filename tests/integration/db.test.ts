@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createTestDatabase, createUser, cleanupUsers, type UserRole } from '../helpers/seed';
-import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
+import { type TestDb } from '../helpers/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 describe('Database Integration', () => {
-  let db: ReturnType<typeof drizzlePglite>;
+  let db: TestDb;
 
   beforeEach(async () => {
     db = await createTestDatabase();

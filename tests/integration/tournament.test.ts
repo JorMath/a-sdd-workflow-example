@@ -5,7 +5,7 @@ import {
   createTournament,
   assignTournamentAdmin,
 } from '../helpers/seed';
-import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
+import { type TestDb } from '../helpers/db';
 import { torneos, tournamentAdminAssignments } from '@/lib/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import {
@@ -46,7 +46,7 @@ const LOCKED_EN_CURSO_FIELDS = [
  * Returns { success, error? }
  */
 async function transitionState(
-  db: ReturnType<typeof drizzlePglite>,
+  db: TestDb,
   tournamentId: string,
   targetEstado: 'en_curso' | 'finalizado' | 'cancelado' | 'inscripciones',
   cancelReason?: string,
@@ -126,7 +126,7 @@ async function transitionState(
 // ============================================================
 
 describe('Tournament Integration', () => {
-  let db: ReturnType<typeof drizzlePglite>;
+  let db: TestDb;
   let adminUserId: string;
 
   beforeEach(async () => {
@@ -205,8 +205,8 @@ describe('Tournament Integration', () => {
         slug: 'first',
         createdBy: adminUserId,
       });
-      // Tiny delay to ensure distinct timestamps
-      await new Promise((r) => setTimeout(r, 10));
+      // SQLite timestamp resolution is seconds (Unix epoch), so we need > 1s delay
+      await new Promise((r) => setTimeout(r, 1100));
       await createTournament(db, {
         nombre: 'Second',
         slug: 'second',

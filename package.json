@@ -14,7 +14,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@electric-sql/pglite": "^0.3.16",
+    "better-sqlite3": "^12.6.2",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
@@ -24,7 +24,6 @@
     "drizzle-orm": "^0.45.1",
     "next": "15.5.12",
     "next-auth": "5.0.0-beta.30",
-    "postgres": "^3.4.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.2",
@@ -35,6 +34,7 @@
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "20",
     "@types/react": "19",
     "@types/react-dom": "19",
@@ -47,5 +47,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
   }
 }
