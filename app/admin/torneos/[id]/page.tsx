@@ -125,11 +125,11 @@ export default async function TorneoDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-3">
             <StatusBadge estado={t.estado} />
             {isEditable && (
-              <Link href={`/admin/torneos/${t.id}/edit`}>
-                <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/admin/torneos/${t.id}/edit`}>
                   Editar
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
           </div>
         </div>

@@ -511,11 +511,11 @@ export default function NuevoTorneoPage() {
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Creando..." : "Crear Torneo"}
             </Button>
-            <Link href="/admin/torneos">
-              <Button type="button" variant="outline">
+            <Button type="button" variant="outline" asChild>
+              <Link href="/admin/torneos">
                 Cancelar
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </form>
       </Form>

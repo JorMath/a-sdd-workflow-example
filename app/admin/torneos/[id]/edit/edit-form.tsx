@@ -567,11 +567,11 @@ export function EditTournamentForm({ tournament }: EditTournamentFormProps) {
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Guardando..." : "Guardar Cambios"}
             </Button>
-            <Link href={`/admin/torneos/${tournament.id}`}>
-              <Button type="button" variant="outline">
+            <Button type="button" variant="outline" asChild>
+              <Link href={`/admin/torneos/${tournament.id}`}>
                 Cancelar
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </form>
       </Form>

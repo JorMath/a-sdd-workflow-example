@@ -8,13 +8,13 @@ export default function Home() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Liga Deportiva Zambiza</h1>
-          <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Iniciar Sesión</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Registrarse</Button>
-            </Link>
+           <div className="flex items-center gap-4">
+            <Button variant="ghost" asChild>
+              <Link href="/login">Iniciar Sesión</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/register">Registrarse</Link>
+            </Button>
           </div>
         </div>
       </header>
@@ -29,9 +29,9 @@ export default function Home() {
               Administra tu liga de manera eficiente con todas las herramientas que necesitas
             </p>
             <div className="flex justify-center gap-4">
-              <Link href="/register">
-                <Button size="lg">Comenzar Ahora</Button>
-              </Link>
+              <Button size="lg" asChild>
+                <Link href="/register">Comenzar Ahora</Link>
+              </Button>
             </div>
           </section>
 

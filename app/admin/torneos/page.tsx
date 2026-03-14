@@ -173,9 +173,9 @@ export default async function TorneosPage({ searchParams }: PageProps) {
             Gestiona los torneos de la liga
           </p>
         </div>
-        <Link href="/admin/torneos/nuevo">
-          <Button>Nuevo Torneo</Button>
-        </Link>
+        <Button asChild>
+          <Link href="/admin/torneos/nuevo">Nuevo Torneo</Link>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -248,11 +248,11 @@ export default async function TorneosPage({ searchParams }: PageProps) {
                     </td>
                     <td className="px-4 py-3">{tournament.fechaInicio}</td>
                     <td className="px-4 py-3 text-right">
-                      <Link href={`/admin/torneos/${tournament.id}`}>
-                        <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/torneos/${tournament.id}`}>
                           Ver
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     </td>
                   </tr>
                 ))
