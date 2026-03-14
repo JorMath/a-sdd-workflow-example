@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core';
 
 // --- Enum value arrays (app-level validation via Zod, compile-time TS checks via text({ enum })) ---

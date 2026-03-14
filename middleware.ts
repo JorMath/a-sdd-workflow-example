@@ -1,8 +1,11 @@
-import { auth } from '@/lib/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/lib/auth/auth.config';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';
 import { hasRole, type UserRole } from '@/lib/auth/permissions';
+
+const { auth } = NextAuth(authConfig);
 
 type Role = 'super_admin' | 'admin_torneo' | 'arbitro' | 'capitan' | 'jugador';
 
